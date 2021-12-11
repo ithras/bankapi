@@ -87,7 +87,7 @@ func HandlerCreateTransaction(c echo.Context) error {
 	err = transactionValidator(transaction)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "transaction couldn't be validated"+err.Error())
+		return c.String(http.StatusInternalServerError, "transaction couldn't be validated "+err.Error())
 	}
 
 	err = dbwrapper.CreateTransaction(transaction)

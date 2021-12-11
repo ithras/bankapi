@@ -67,11 +67,13 @@ func transactionWithdraw(account models.Account, transaction models.Transaction)
 
 func transactionTransfer(sender, receiver models.Account, transaction models.Transaction) error {
 	if sender.Currency != receiver.Currency {
-		return fmt.Errorf("insuficiente funds")
-	} else if transaction.Amount > sender.Balance {
 		return fmt.Errorf("accounts manage different currencies")
+	} else if transaction.Amount > sender.Balance {
+		return fmt.Errorf("insuficiente funds")
 	} else if transaction.Amount <= 0 {
 		return fmt.Errorf("amount must be greater than 0")
+	} else if sender.ID == receiver.ID {
+		return fmt.Errorf("sender cannot be the same as receiver")
 	}
 
 	err := updateBalance(&sender, (transaction.Amount)*-1)
