@@ -13,10 +13,16 @@ import (
 func main() {
 	postgresInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		"localhost", 5432, "postgres", "banktest", "bank")
-	dbwrapper.DB, _ = sql.Open("postgres", postgresInfo)
-	defer dbwrapper.DB.Close()
 
+	var err error
 	e := echo.New()
+
+	dbwrapper.DB, err = sql.Open("postgres", postgresInfo)
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+
+	defer dbwrapper.DB.Close()
 
 	e.POST("/client", handlers.HandlerCreateUser)
 	e.GET("/client/:id", handlers.HandlerGetUser)
