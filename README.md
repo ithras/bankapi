@@ -1,4 +1,4 @@
-#BankApi
+# Bank API
 
 A simple test for a bank api
 
