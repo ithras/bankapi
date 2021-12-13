@@ -4,22 +4,28 @@ import (
 	"bankTest/dbwrapper"
 	"bankTest/handlers"
 	"database/sql"
-	"fmt"
-
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"os"
+	"time"
 )
 
 func main() {
-	postgresInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		"localhost", 5432, "postgres", "banktest", "bank")
-
-	var err error
 	e := echo.New()
+	e.HideBanner = true
 
-	dbwrapper.DB, err = sql.Open("postgres", postgresInfo)
+	err := connectDB()
 	if err != nil {
-		e.Logger.Fatal(err)
+		e.Logger.Error(err)
+	}
+
+	for dbwrapper.DB.Ping() != nil {
+		err := connectDB()
+		if err != nil {
+			e.Logger.Error(err)
+		}
+
+		time.Sleep(5 * time.Second)
 	}
 
 	defer dbwrapper.DB.Close()
@@ -33,11 +39,14 @@ func main() {
 	e.POST("/transaction", handlers.HandlerCreateTransaction)
 	e.GET("/transactions/:account_id", handlers.HandlerGetTransactions)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start("0.0.0.0:8080"))
 }
 
-/*
-func getUsers(c echo.Context) error {
-	return c.String()
+func connectDB() error {
+	var err error
+	dbwrapper.DB, err = sql.Open("postgres", os.Getenv("POSTGRES_URI"))
+	if err != nil {
+		return err
+	}
+	return nil
 }
-*/

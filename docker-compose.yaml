@@ -1,0 +1,27 @@
+version: "3.7"
+services:
+  database:
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+      - ./pg-setup.sql:/docker-entrypoint-initdb.d/init.sql
+
+  server:
+    image: ithras/bankapi_server:latest
+    environment:
+      POSTGRES_URI: 'host=database port=5432 user=docker password=docker dbname=docker sslmode=disable'
+    depends_on:
+      - database
+    networks:
+      - default
+    ports:
+      - "8080:8080"
+volumes:
+  data:
