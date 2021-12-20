@@ -16,16 +16,16 @@ func HandlerCreateUser(c echo.Context) error {
 	err := dec.Decode(&cli)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, "json format is invalid")
 	}
 
 	err = dbwrapper.CreateClient(cli)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, "invalid database connection")
 	}
 
-	return c.String(http.StatusOK, "User Created")
+	return c.String(http.StatusOK, "user created")
 }
 
 func HandlerGetUser(c echo.Context) error {
@@ -33,7 +33,7 @@ func HandlerGetUser(c echo.Context) error {
 	cli, err := dbwrapper.GetClient(id)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusBadRequest, "client not found")
 	}
 
 	return c.JSON(http.StatusOK, cli)
@@ -45,22 +45,22 @@ func HandlerCreateAccount(c echo.Context) error {
 	err := dec.Decode(&account)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusBadRequest, "json format is invalid")
 	}
 
 	err = accountValidator(account)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusBadRequest, "client doesnt exists")
 	}
 
 	err = dbwrapper.CreateAccount(account)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, "Invalid database connection")
 	}
 
-	return c.String(http.StatusOK, "Account Created")
+	return c.String(http.StatusOK, "account created")
 }
 
 func HandlerGetAccount(c echo.Context) error {
@@ -68,7 +68,7 @@ func HandlerGetAccount(c echo.Context) error {
 	account, err := dbwrapper.GetAccount(id)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusNotFound, "account not found")
 	}
 
 	return c.JSON(http.StatusOK, account)
@@ -81,19 +81,19 @@ func HandlerCreateTransaction(c echo.Context) error {
 	err := dec.Decode(&transaction)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, "json format is invalid")
 	}
 
 	err = transactionValidator(transaction)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "transaction couldn't be validated "+err.Error())
+		return c.String(http.StatusBadRequest, "transaction is invalid: "+err.Error())
 	}
 
 	err = dbwrapper.CreateTransaction(transaction)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "transaction could not be created "+err.Error())
+		return c.String(http.StatusBadRequest, "invalid database connection")
 	}
 
 	return c.String(http.StatusOK, "Transaction Complete")
@@ -105,7 +105,7 @@ func HandlerGetTransactions(c echo.Context) error {
 	transactions, err := dbwrapper.GetTransactions(account_id)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusNotFound, "account not found")
 	}
 
 	return c.JSON(http.StatusOK, transactions)

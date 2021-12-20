@@ -2,6 +2,7 @@ package dbwrapper
 
 import (
 	"bankTest/models"
+	"context"
 	"database/sql"
 	"time"
 
@@ -11,62 +12,136 @@ import (
 var DB *sql.DB
 
 func CreateClient(cli models.Client) error {
-	stmt, err := DB.Prepare("INSERT INTO clients (name,created_at) VALUES ($1,$2)")
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(cli.Name, time.Now())
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO clients (name,created_at) VALUES ($1,$2)")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(ctx, cli.Name, time.Now())
+	if err != nil {
+		tx.Rollback()
+	}
+
+	err = tx.Commit()
 
 	return err
 }
 
 func GetClient(id int) (models.Client, error) {
 	cli := models.Client{ID: id}
-	err := DB.QueryRow("SELECT name FROM clients WHERE id = $1", cli.ID).Scan(&cli.Name)
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+	if err != nil {
+		return cli, err
+	}
+
+	row := tx.QueryRow("SELECT name FROM clients WHERE id = $1", cli.ID)
+
+	err = row.Scan(&cli.Name)
+	if err != nil {
+		tx.Rollback()
+	}
+
+	err = tx.Commit()
 
 	return cli, err
 }
 
 func CreateAccount(account models.Account) error {
-	stmt, err := DB.Prepare("INSERT INTO accounts(client_id,currency,balance,created_at,updated_at) VALUES($1,$2,$3,$4,$5)")
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(account.ClientID, account.Currency, 0, time.Now(), time.Now())
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO accounts(client_id,currency,balance,created_at,updated_at) VALUES($1,$2,$3,$4,$5)")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(ctx, account.ClientID, account.Currency, 0, time.Now(), time.Now())
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
 
 	return err
 }
 
 func GetAccount(id int) (models.Account, error) {
 	account := models.Account{ID: id}
-	//err := DB.QueryRow("SELECT * FROM accounts WHERE id = $1", account.ID).Scan(&account)
-	err := DB.QueryRow("SELECT id,client_id,currency,balance,created_at,updated_at FROM accounts WHERE id = $1", account.ID).
-		Scan(&account.ID, &account.ClientID, &account.Currency, &account.Balance, &account.CreatedAt, &account.UpdatedAt)
+
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
+	if err != nil {
+		return models.Account{}, err
+	}
+
+	row := tx.QueryRow("SELECT id,client_id,currency,balance,created_at,updated_at FROM accounts WHERE id = $1")
+
+	err = row.Scan(&account.ID, &account.ClientID, &account.Currency, &account.Balance, &account.CreatedAt, &account.UpdatedAt)
+
+	if err != nil {
+		return models.Account{}, err
+	}
+
+	err = tx.Commit()
 
 	return account, err
 }
 
 func UpdateAccountBalance(account models.Account) error {
-	stmt, err := DB.Prepare("UPDATE accounts SET balance = $2, updated_at = $3 WHERE id = $1")
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(account.ID, account.Balance, time.Now())
+	stmt, err := tx.PrepareContext(ctx, "UPDATE accounts SET balance = $2, updated_at = $3 WHERE id = $1")
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.ExecContext(ctx, account.ID, account.Balance, time.Now())
+	if err != nil {
+		tx.Rollback()
+	}
+
+	err = tx.Commit()
 
 	return err
 }
 
 func CreateTransaction(transaction models.Transaction) error {
-	stmt, err := DB.Prepare("INSERT INTO transactions (receiver_id,sender_id,amount,type,created_at) VALUES($1,$2,$3,$4,$5)")
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO transactions (receiver_id,sender_id,amount,type,created_at) VALUES($1,$2,$3,$4,$5)")
 
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(transaction.ReceiverID, transaction.SenderID, transaction.Amount, transaction.Type, time.Now())
+	_, err = stmt.ExecContext(ctx, transaction.ReceiverID, transaction.SenderID, transaction.Amount, transaction.Type, time.Now())
+	if err != nil {
+		tx.Rollback()
+	}
+
+	err = tx.Commit()
 
 	return err
 }
@@ -75,7 +150,14 @@ func GetTransactions(accID int) ([]models.Transaction, error) {
 	var transactions []models.Transaction
 	var transaction models.Transaction
 
-	rows, err := DB.Query("SELECT id, sender_id, receiver_id, amount,type, created_at FROM transactions WHERE sender_id = $1 OR receiver_id = $1", accID)
+	ctx := context.Background()
+	tx, err := DB.BeginTx(ctx, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.Query("SELECT id, sender_id, receiver_id, amount,type, created_at FROM transactions WHERE sender_id = $1 OR receiver_id = $1", accID)
 
 	if err != nil {
 		return nil, err
@@ -97,6 +179,8 @@ func GetTransactions(accID int) ([]models.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = tx.Commit()
 
 	return transactions, err
 }
