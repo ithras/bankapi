@@ -108,6 +108,8 @@ func UpdateAccountBalance(account models.Account) error {
 		return err
 	}
 
+	_ = tx.QueryRowContext(ctx, "SELECT * FROM accounts WHERE id = $1 FOR UPDATE", account.ID)
+
 	stmt, err := tx.PrepareContext(ctx, "UPDATE accounts SET balance = $2, updated_at = $3 WHERE id = $1")
 	if err != nil {
 		return err
