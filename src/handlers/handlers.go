@@ -16,7 +16,7 @@ func HandlerCreateUser(c echo.Context) error {
 	err := dec.Decode(&cli)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "json format is invalid")
+		return c.String(http.StatusBadRequest, "json format is invalid")
 	}
 
 	err = dbwrapper.CreateClient(cli)
@@ -48,10 +48,10 @@ func HandlerCreateAccount(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "json format is invalid")
 	}
 
-	err = accountValidator(account)
+	err = validateAccount(account)
 
 	if err != nil {
-		return c.String(http.StatusBadRequest, "client doesnt exists")
+		return c.String(http.StatusBadRequest, err.Error())
 	}
 
 	err = dbwrapper.CreateAccount(account)
@@ -81,10 +81,10 @@ func HandlerCreateTransaction(c echo.Context) error {
 	err := dec.Decode(&transaction)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "json format is invalid")
+		return c.String(http.StatusBadRequest, "json format is invalid")
 	}
 
-	err = transactionValidator(transaction)
+	err = validateTransaction(transaction)
 
 	if err != nil {
 		return c.String(http.StatusBadRequest, "transaction is invalid: "+err.Error())

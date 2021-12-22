@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func accountValidator(account models.Account) error {
+func validateAccount(account models.Account) error {
 	if account.Currency != "USD" && account.Currency != "MXN" && account.Currency != "COP" {
 		return fmt.Errorf("currency not supported")
 	}
@@ -19,23 +19,24 @@ func accountValidator(account models.Account) error {
 	return nil
 }
 
-func transactionValidator(transaction models.Transaction) error {
+func validateTransaction(transaction models.Transaction) error {
 	senderAcc, _ := dbwrapper.GetAccount(transaction.SenderID)
 
 	receiverAcc, _ := dbwrapper.GetAccount(transaction.ReceiverID)
 
 	switch transaction.Type {
 	case "deposit":
-		return transactionDeposit(receiverAcc, transaction)
+		return deposit(receiverAcc, transaction)
 
 	case "withdraw":
-		return transactionWithdraw(senderAcc, transaction)
+		return withdraw(senderAcc, transaction)
 
 	case "transfer":
-		return transactionTransfer(senderAcc, receiverAcc, transaction)
-	}
+		return transfer(senderAcc, receiverAcc, transaction)
 
-	return nil
+	default:
+		return fmt.Errorf("transaction type is invalid")
+	}
 }
 
 func updateBalance(account *models.Account, amount float64) error {
@@ -43,7 +44,7 @@ func updateBalance(account *models.Account, amount float64) error {
 	return dbwrapper.UpdateAccountBalance(*account)
 }
 
-func transactionDeposit(account models.Account, transaction models.Transaction) error {
+func deposit(account models.Account, transaction models.Transaction) error {
 	if transaction.Amount < 0 {
 		return fmt.Errorf("cannot deposit negative amount")
 	} else if account.ID <= 0 {
@@ -53,7 +54,7 @@ func transactionDeposit(account models.Account, transaction models.Transaction) 
 	return updateBalance(&account, transaction.Amount)
 }
 
-func transactionWithdraw(account models.Account, transaction models.Transaction) error {
+func withdraw(account models.Account, transaction models.Transaction) error {
 	if transaction.Amount > account.Balance {
 		return fmt.Errorf("insuficient funds")
 	} else if transaction.Amount >= 0 {
@@ -65,7 +66,7 @@ func transactionWithdraw(account models.Account, transaction models.Transaction)
 	return updateBalance(&account, transaction.Amount)
 }
 
-func transactionTransfer(sender, receiver models.Account, transaction models.Transaction) error {
+func transfer(sender, receiver models.Account, transaction models.Transaction) error {
 	if sender.Currency != receiver.Currency {
 		return fmt.Errorf("accounts manage different currencies")
 	} else if transaction.Amount > sender.Balance {

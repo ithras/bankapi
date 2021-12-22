@@ -87,7 +87,7 @@ func GetAccount(id int) (models.Account, error) {
 		return models.Account{}, err
 	}
 
-	row := tx.QueryRow("SELECT id,client_id,currency,balance,created_at,updated_at FROM accounts WHERE id = $1")
+	row := tx.QueryRow("SELECT id,client_id,currency,balance,created_at,updated_at FROM accounts WHERE id = $1", &account.ID)
 
 	err = row.Scan(&account.ID, &account.ClientID, &account.Currency, &account.Balance, &account.CreatedAt, &account.UpdatedAt)
 
@@ -108,7 +108,7 @@ func UpdateAccountBalance(account models.Account) error {
 		return err
 	}
 
-	_ = tx.QueryRowContext(ctx, "SELECT * FROM accounts WHERE id = $1 FOR UPDATE", account.ID)
+	_ = tx.QueryRowContext(ctx, "SELECT * FROM accounts WHERE id = $1 FOR UPDATE", account.ID).Scan(&account.ID)
 
 	stmt, err := tx.PrepareContext(ctx, "UPDATE accounts SET balance = $2, updated_at = $3 WHERE id = $1")
 	if err != nil {
