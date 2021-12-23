@@ -20,19 +20,19 @@ func validateAccount(account models.Account) error {
 }
 
 func validateTransaction(transaction models.Transaction) error {
-	senderAcc, _ := dbwrapper.GetAccount(transaction.SenderID)
+	clientAcc, _ := dbwrapper.GetAccount(transaction.ClientID)
 
-	receiverAcc, _ := dbwrapper.GetAccount(transaction.ReceiverID)
+	transferAcc, _ := dbwrapper.GetAccount(transaction.TransferID)
 
 	switch transaction.Type {
 	case "deposit":
-		return deposit(receiverAcc, transaction)
+		return deposit(clientAcc, transaction)
 
 	case "withdraw":
-		return withdraw(senderAcc, transaction)
+		return withdraw(clientAcc, transaction)
 
 	case "transfer":
-		return transfer(senderAcc, receiverAcc, transaction)
+		return transfer(clientAcc, transferAcc, transaction)
 
 	default:
 		return fmt.Errorf("transaction type is invalid")
@@ -45,7 +45,9 @@ func updateBalance(account *models.Account, amount float64) error {
 }
 
 func deposit(account models.Account, transaction models.Transaction) error {
-	if transaction.Amount < 0 {
+	if account == (models.Account{}) {
+		return fmt.Errorf("account doesnt exists")
+	} else if transaction.Amount < 0 {
 		return fmt.Errorf("cannot deposit negative amount")
 	} else if account.ID <= 0 {
 		return fmt.Errorf("account doesnt exists")
@@ -55,7 +57,9 @@ func deposit(account models.Account, transaction models.Transaction) error {
 }
 
 func withdraw(account models.Account, transaction models.Transaction) error {
-	if transaction.Amount > account.Balance {
+	if account == (models.Account{}) {
+		return fmt.Errorf("account doesnt exists")
+	} else if account.Balance-transaction.Amount < 0 {
 		return fmt.Errorf("insuficient funds")
 	} else if transaction.Amount >= 0 {
 		return fmt.Errorf("cannot withdraw positive amount")
@@ -67,7 +71,11 @@ func withdraw(account models.Account, transaction models.Transaction) error {
 }
 
 func transfer(sender, receiver models.Account, transaction models.Transaction) error {
-	if sender.Currency != receiver.Currency {
+	if sender == (models.Account{}) {
+		return fmt.Errorf("sender account doesnt exists")
+	} else if receiver == (models.Account{}) {
+		return fmt.Errorf("receiver account doesnt exists")
+	} else if sender.Currency != receiver.Currency {
 		return fmt.Errorf("accounts manage different currencies")
 	} else if transaction.Amount > sender.Balance {
 		return fmt.Errorf("insuficiente funds")

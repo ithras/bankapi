@@ -19,8 +19,8 @@ type Account struct {
 }
 
 type Transaction struct {
-	SenderID   int       `json:"sender_id"`
-	ReceiverID int       `json:"receiver_id"`
+	ClientID   int       `json:"client_id"`
+	TransferID int       `json:"transfer_id"`
 	ID         int       `json:"transaction_id"`
 	Type       string    `json:"type"`
 	Amount     float64   `json:"amount"`

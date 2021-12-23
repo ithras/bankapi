@@ -132,13 +132,14 @@ func CreateTransaction(transaction models.Transaction) error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.PrepareContext(ctx, "INSERT INTO transactions (receiver_id,sender_id,amount,type,created_at) VALUES($1,$2,$3,$4,$5)")
+
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO transactions (client_id,transfer_id,amount,type,created_at) VALUES($1,$2,$3,$4,$5)")
 
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.ExecContext(ctx, transaction.ReceiverID, transaction.SenderID, transaction.Amount, transaction.Type, time.Now())
+	_, err = stmt.ExecContext(ctx, transaction.ClientID, transaction.TransferID, transaction.Amount, transaction.Type, time.Now())
 	if err != nil {
 		tx.Rollback()
 	}
@@ -159,7 +160,7 @@ func GetTransactions(accID int) ([]models.Transaction, error) {
 		return nil, err
 	}
 
-	rows, err := tx.Query("SELECT id, sender_id, receiver_id, amount,type, created_at FROM transactions WHERE sender_id = $1 OR receiver_id = $1", accID)
+	rows, err := tx.Query("SELECT id, client_id, transfer_id, amount,type, created_at FROM transactions WHERE client_id = $1 OR transfer_id = $1", accID)
 
 	if err != nil {
 		return nil, err
@@ -168,7 +169,7 @@ func GetTransactions(accID int) ([]models.Transaction, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		err = rows.Scan(&transaction.ID, &transaction.SenderID, &transaction.ReceiverID, &transaction.Amount, &transaction.Type, &transaction.CreatedAt)
+		err = rows.Scan(&transaction.ID, &transaction.ClientID, &transaction.TransferID, &transaction.Amount, &transaction.Type, &transaction.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

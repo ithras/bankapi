@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS accounts
     id         INT GENERATED ALWAYS AS IDENTITY,
     client_id  INT       NOT NULL,
     currency   CURRENCY  NOT NULL,
-    balance    FLOAT,
+    balance    FLOAT 
+        CHECK (balance>=0),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     PRIMARY KEY (id),
@@ -39,16 +40,13 @@ $$;
 CREATE TABLE IF NOT EXISTS transactions
 (
     id          INT GENERATED ALWAYS AS IDENTITY,
-    receiver_id INT,
-    sender_id   INT,
+    client_id INT,
+    transfer_id   INT,
     amount      FLOAT            NOT NULL,
     type        TRANSACTION_TYPE NOT NULL,
     created_at  TIMESTAMP        NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT fk_receiver
-        FOREIGN KEY (receiver_id)
-            REFERENCES accounts (id),
-    CONSTRAINT fk_sender
-        FOREIGN KEY (sender_id)
+    CONSTRAINT fk_client
+        FOREIGN KEY (client_id)
             REFERENCES accounts (id)
 );
