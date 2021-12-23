@@ -14,7 +14,7 @@ services:
       - ./pg-setup.sql:/docker-entrypoint-initdb.d/init.sql
 
   server:
-    build: .
+    image: ithras/bankapi_server:latest
     environment:
       POSTGRES_URI: 'host=database port=5432 user=docker password=docker dbname=docker sslmode=disable'
     depends_on:
