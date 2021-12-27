@@ -20,7 +20,10 @@ func validateAccount(account models.Account) error {
 }
 
 func validateTransaction(transaction models.Transaction) error {
-	clientAcc, _ := dbwrapper.GetAccount(transaction.ClientID)
+	clientAcc, err := dbwrapper.GetAccount(transaction.ClientID)
+	if err != nil {
+		return fmt.Errorf("client doesnt exists")
+	}
 
 	transferAcc, _ := dbwrapper.GetAccount(transaction.TransferID)
 
@@ -51,6 +54,8 @@ func deposit(account models.Account, transaction models.Transaction) error {
 		return fmt.Errorf("cannot deposit negative amount")
 	} else if account.ID <= 0 {
 		return fmt.Errorf("account doesnt exists")
+	} else if transaction.TransferID != 0 {
+		return fmt.Errorf("extra arguments in the request")
 	}
 
 	return updateBalance(&account, transaction.Amount)
@@ -65,6 +70,8 @@ func withdraw(account models.Account, transaction models.Transaction) error {
 		return fmt.Errorf("cannot withdraw positive amount")
 	} else if account.ID <= 0 {
 		return fmt.Errorf("account doesnt exists")
+	} else if transaction.TransferID != 0 {
+		return fmt.Errorf("extra arguments in the request")
 	}
 
 	return updateBalance(&account, transaction.Amount)
